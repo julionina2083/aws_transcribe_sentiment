@@ -9,6 +9,9 @@ Parameters:
     Type: String
   NotificationSourceEmailAddress:
     Type: String
+Globals:
+  Api:
+    OpenApiVersion: 3.0.1
 Resources:
   TranscriptionsBucket:
     Type: AWS::S3::Bucket
@@ -336,6 +339,36 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+
+
+  WebsiteApi2:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: th1rd-serverless-test
+      StageName: omega2
+      MethodSettings:
+        - ResourcePath: /upload
+          HttpMethod: GET
+      GatewayResponses:
+        UNAUTHORIZED:
+          ResponseTemplates:
+            "application/json": '{  "message":  "Invalid Authorization Token" }'
+      Auth:
+        DefaultAuthorizer: LambdaAuthorizer
+        Authorizers:
+          LambdaAuthorizer:
+            FunctionPayloadType: REQUEST
+            FunctionArn: !GetAtt StaticWebsiteAuthorizerFunction.Arn
+            FunctionInvokeRole: !GetAtt StaticWebsiteAuthorizerIamRole.Arn
+            Identity:
+              Headers:
+                - Authorization
+            AuthorizerPayloadFormatVersion: 2.0
+            EnableSimpleResponses: true
+
+
+
   WebsiteApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -406,6 +439,14 @@ Resources:
       Tags:
         Project: serverless-transcribe
       Timeout: 3
+      Events:
+        WebsiteApi2:
+          Type: Api
+          Properties:
+            Method: GET
+            Path: /upload
+            RestApiId: !Ref WebsiteApi2
+            PayloadFormatVersion: 2.0
   StaticWebsiteFunctionIamRole:
     Type: AWS::IAM::Role
     Properties:
