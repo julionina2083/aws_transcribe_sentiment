@@ -352,8 +352,11 @@ Resources:
           HttpMethod: GET
       GatewayResponses:
         UNAUTHORIZED:
+          ResponseParameters:
+            Headers:
+              "WWW-Authenticate": "'Basic'"
           ResponseTemplates:
-            "application/json": '{  "message":  "Invalid Authorization Token" }'
+            "application/json": { "message" : $context.error.messageString }
       Auth:
         DefaultAuthorizer: LambdaAuthorizer
         Authorizers:
@@ -364,9 +367,6 @@ Resources:
             Identity:
               Headers:
                 - Authorization
-            AuthorizerPayloadFormatVersion: 2.0
-            EnableSimpleResponses: true
-
 
 
   WebsiteApi:
@@ -443,10 +443,10 @@ Resources:
         WebsiteApi2:
           Type: Api
           Properties:
+            RestApiId: !Ref WebsiteApi2
             Method: GET
             Path: /upload
-            RestApiId: !Ref WebsiteApi2
-            PayloadFormatVersion: 2.0
+            
   StaticWebsiteFunctionIamRole:
     Type: AWS::IAM::Role
     Properties:
